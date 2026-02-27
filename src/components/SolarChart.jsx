@@ -36,9 +36,7 @@ function SolarChart() {
       });
     });
 
-    return () => {
-      socket.off("new-solar-data");
-    };
+    return () => socket.off("new-solar-data");
   }, []);
 
   const data = {
@@ -50,7 +48,7 @@ function SolarChart() {
           y: item.elevation,
         })),
         backgroundColor: "rgba(0,229,255,0.8)",
-        pointRadius: 4,
+        pointRadius: 5,
       },
     ],
   };
@@ -68,7 +66,7 @@ function SolarChart() {
         title: {
           display: true,
           text: "Azimuth (°)",
-          color: "#ffffff",
+          color: "#00E5FF",
         },
         ticks: { color: "#ffffff" },
         grid: { color: "rgba(255,255,255,0.1)" },
@@ -77,7 +75,7 @@ function SolarChart() {
         title: {
           display: true,
           text: "Elevation (°)",
-          color: "#ffffff",
+          color: "#00E5FF",
         },
         ticks: { color: "#ffffff" },
         grid: { color: "rgba(255,255,255,0.1)" },
@@ -86,15 +84,7 @@ function SolarChart() {
   };
 
   return (
-    <div
-      style={{
-        height: "400px",
-        backgroundColor: "#121212",
-        padding: "20px",
-        borderRadius: "10px",
-        marginTop: "20px",
-      }}
-    >
+    <div style={{ height: "100%", width: "100%" }}>
       <Scatter data={data} options={options} />
     </div>
   );

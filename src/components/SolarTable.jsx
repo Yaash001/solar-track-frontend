@@ -7,7 +7,6 @@ function SolarTable() {
   const [readings, setReadings] = useState([]);
 
   useEffect(() => {
-    // Initial fetch
     axios
       .get("http://localhost:5000/api/solar-readings")
       .then((response) => {
@@ -23,17 +22,20 @@ function SolarTable() {
       });
     });
 
-    return () => {
-      socket.off("new-solar-data");
-    };
+    return () => socket.off("new-solar-data");
   }, []);
 
-  const formatTime = (unix) => {
-    return new Date(unix * 1000).toLocaleTimeString();
+  const formatTime = (dateString) => {
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
   };
 
   return (
-    <table border="1" cellPadding="10" style={{ marginTop: "20px" }}>
+    <table>
       <thead>
         <tr>
           <th>Time</th>
@@ -44,7 +46,7 @@ function SolarTable() {
       <tbody>
         {readings.map((item) => (
           <tr key={item._id}>
-            <td>{formatTime(item.timestamp)}</td>
+            <td>{formatTime(item.recordedAt)}</td>
             <td>{item.azimuth.toFixed(2)}</td>
             <td>{item.elevation.toFixed(2)}</td>
           </tr>

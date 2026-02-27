@@ -1,42 +1,198 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Smooth theme transition */
+body {
+  transition: background 0.4s ease, color 0.4s ease;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ======================
+   DARK THEME
+====================== */
+body.dark {
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: white;
+}
+
+body.dark .card,
+body.dark .chart-card {
+  background: #121212;
+  color: white;
+  box-shadow: 0 0 25px rgba(0, 229, 255, 0.15);
+}
+
+body.dark th {
+  background-color: #1e1e1e;
+  color: #00e5ff;
+}
+
+body.dark td {
+  border: 1px solid #333;
+}
+
+body.dark tr:nth-child(even) {
+  background-color: #1a1a1a;
+}
+
+/* ======================
+   LIGHT THEME
+====================== */
+body.light {
+  background: linear-gradient(135deg, #e3f2fd, #ffffff);
+  color: #111;
+}
+
+body.light .card,
+body.light .chart-card {
+  background: #ffffff;
+  color: #111;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+body.light th {
+  background-color: #f5f5f5;
+  color: #111;
+}
+
+body.light td {
+  border: 1px solid #ddd;
+}
+
+body.light tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* ======================
+   DASHBOARD LAYOUT
+====================== */
+.dashboard {
+  padding: 30px;
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* HEADER */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-title {
+  font-size: 34px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+body.dark .dashboard-title {
+  color: #00e5ff;
+}
+
+body.light .dashboard-title {
+  color: #0077cc;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* ======================
+   MAIN GRID
+====================== */
+.main-layout {
+  display: grid;
+  grid-template-columns: 70% 30%;
+  gap: 25px;
+  width: 100%;
+  align-items: stretch;
+}
+
+/* CHART */
+.chart-card {
+  border-radius: 15px;
+  padding: 25px;
+  height: 60vh;
+  transition: 0.3s ease;
+}
+
+/* RIGHT SIDE */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* CARDS */
+.card {
+  border-radius: 15px;
+  padding: 25px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+/* TABLE */
+.table-card {
+  margin-top: 30px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  padding: 12px;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* ======================
+   THEME BUTTON
+====================== */
+.theme-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s ease;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+body.dark .theme-btn {
+  background: #00e5ff;
+  color: black;
+}
+
+body.light .theme-btn {
+  background: #0077cc;
+  color: white;
+}
+
+.theme-btn:hover {
+  transform: scale(1.08);
+}
+
+/* ======================
+   RESPONSIVE
+====================== */
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
   }
-  to {
-    transform: rotate(360deg);
+
+  .chart-card {
+    height: 50vh;
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
 }

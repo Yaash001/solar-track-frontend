@@ -1,21 +1,53 @@
-import SolarTable from "./components/SolarTable";
 import SolarChart from "./components/SolarChart";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import SolarOutput from "./components/SolarOutput";
 import SolarSunPath from "./components/SolarSunPath";
+import SolarTable from "./components/SolarTable";
+import LiveStatus from "./components/LiveStatus";
+import ThemeToggle from "./components/ThemeToggle";
+import "./App.css";
 
 function App() {
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>Solar Tracker Dashboard</h1>
+    <div className="dashboard">
 
-      <SolarChart />
-      <SolarTable />
-      <SolarOutput/>
-      <SolarSunPath/>
+      {/* HEADER */}
+      <div className="header">
+        <h1 className="dashboard-title">
+          ☀ Solar Tracking Dashboard
+        </h1>
 
-      <ToastContainer position="bottom-right" />
+        <div className="header-right">
+          <LiveStatus />
+          <ThemeToggle />
+        </div>
+      </div>
+
+      {/* MAIN CONTENT */}
+      <div className="main-layout">
+
+        {/* LEFT SIDE - CHART */}
+        <div className="chart-card">
+          <SolarChart />
+        </div>
+
+        {/* RIGHT SIDE - OUTPUT + SUN */}
+        <div className="right-column">
+          <div className="card">
+            <SolarOutput />
+          </div>
+
+          <div className="card">
+            <SolarSunPath />
+          </div>
+        </div>
+
+      </div>
+
+      {/* TABLE FULL WIDTH */}
+      <div className="card table-card">
+        <SolarTable />
+      </div>
+
     </div>
   );
 }

@@ -1,78 +1,99 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
 import socket from "../services/socket";
 
-function SolarSunPath({ radius = 120, width = 260, height = 150 }) {
+function SolarSunPath({ radius = 100 }) {
+  const width = radius * 2 + 20; // semi-circle width + margin
+  const height = radius + 20; // semi-circle height + margin
+
   const [readings, setReadings] = useState([]);
 
-  // Initialize sun elevation from last reading
-  const getLastElevation = () => {
-    if (readings.length === 0) return 0;
-    return Number(readings[readings.length - 1].elevation) || 0;
-  };
+  // Get latest reading safely
+  const latestReading = useMemo(() => {
+    if (!readings.length) return null;
+    return readings[readings.length - 1];
+  }, [readings]);
 
-  const elevation = getLastElevation();
+  // Determine max elevation for scaling
+  const maxElevation = useMemo(() => {
+    if (!readings.length) return 60; // default max
+    return Math.max(...readings.map((r) => Number(r.elevation)), 60);
+  }, [readings]);
 
-  // Convert elevation to (x, y) coordinates along semicircle
-  const getSunPosition = (elev) => {
-    const elevRad = (elev * Math.PI) / 180;
-    const x = radius + radius * Math.cos(Math.PI - elevRad);
-    const y = radius - radius * Math.sin(elevRad);
-    return { x: x + 10, y }; // +10 for SVG offset
-  };
+  // Compute sun coordinates
+  const sunCoords = useMemo(() => {
+    if (!latestReading) return { x: radius + 10, y: radius };
 
-  // Fetch last 20 readings on mount
+    const az = Number(latestReading.azimuth);
+    const elev = Number(latestReading.elevation);
+
+    if (!Number.isFinite(az) || !Number.isFinite(elev)) {
+      return { x: radius + 10, y: radius };
+    }
+
+    // Map azimuth (sunrise ≈ 90°, sunset ≈ 270°) to x
+    const minAz = 90;
+    const maxAz = 270;
+    const x = 10 + ((az - minAz) / (maxAz - minAz)) * (radius * 2);
+
+    // Map elevation 0 → maxElevation to y (top of arc = high elevation)
+    const y = radius - (elev / maxElevation) * radius;
+
+    return { x, y };
+  }, [latestReading, radius, maxElevation]);
+
   useEffect(() => {
+    // Initial fetch
     axios
-      .get("http://localhost:5000/api/solar-readings?limit=20")
+      .get("http://localhost:5000/api/solar-readings")
       .then((res) => {
-        if (res.data.length > 0) {
-          setReadings(res.data);
+        if (Array.isArray(res.data)) {
+          setReadings(res.data.slice(-20)); // last 20 readings
         }
       })
-      .catch((err) => console.error(err));
+      .catch(console.error);
 
-    // Socket.io updates
+    // Socket listener for new readings
     socket.on("new-solar-data", (newData) => {
-      setReadings((prev) => {
-        const updated = [...prev, newData];
-        return updated.slice(-20); // keep last 20 readings
-      });
+      setReadings((prev) => [...prev.slice(-19), newData]);
     });
 
     return () => socket.off("new-solar-data");
   }, []);
 
-  const sunCoords = getSunPosition(elevation);
-
   return (
-    <div style={{ marginTop: "30px", textAlign: "center" }}>
+    <div style={{ textAlign: "center" }}>
       <svg width={width} height={height}>
-        {/* Semicircle line */}
+        {/* Sun semi-circle path */}
         <path
           d={`M 10 ${radius} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius}`}
-          stroke="#ffffff"
+          stroke="#00E5FF"
           strokeWidth="2"
           fill="none"
         />
 
-        {/* Sun */}
+        {/* Animated sun */}
         <motion.circle
           r="12"
           fill="#FFD700"
           cx={sunCoords.x}
           cy={sunCoords.y}
           animate={{
-            cx: getSunPosition(elevation).x,
-            cy: getSunPosition(elevation).y,
+            cx: sunCoords.x,
+            cy: sunCoords.y,
           }}
-          transition={{ type: "spring", stiffness: 50, damping: 20 }}
+          transition={{
+            type: "spring",
+            stiffness: 60,
+            damping: 20,
+          }}
         />
       </svg>
 
-      <p style={{ color: "white", marginTop: "10px" }}>
-        Elevation: {elevation.toFixed(1)}°
+      <p style={{ marginTop: "10px" }}>
+        Elevation: {latestReading ? Number(latestReading.elevation).toFixed(1) : 0}° | Azimuth:{" "}
+        {latestReading ? Number(latestReading.azimuth).toFixed(1) : 0}°
       </p>
     </div>
   );

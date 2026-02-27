@@ -6,28 +6,24 @@ function SolarOutput() {
   const [readings, setReadings] = useState([]);
   const [energy, setEnergy] = useState(0);
 
-  const MAX_POWER = 3.6; // total peak power of 4 panels (W)
-  const PANEL_EFFICIENCY = 0.65; // realistic efficiency factor
+  const MAX_POWER = 3.6;
+  const PANEL_EFFICIENCY = 0.65;
 
-  // Fetch initial readings and subscribe to new data
   useEffect(() => {
     axios
       .get("http://localhost:5000/api/solar-readings")
       .then((response) => {
         setReadings(response.data);
       })
-      .catch((err) => console.error("Error fetching solar readings:", err));
+      .catch((err) => console.error(err));
 
     socket.on("new-solar-data", (newData) => {
       setReadings((prev) => [...prev, newData]);
     });
 
-    return () => {
-      socket.off("new-solar-data");
-    };
+    return () => socket.off("new-solar-data");
   }, []);
 
-  // Compute total energy (Wh) whenever readings change
   useEffect(() => {
     if (readings.length < 2) {
       setEnergy(0);
@@ -40,35 +36,33 @@ function SolarOutput() {
       const prev = readings[i - 1];
       const curr = readings[i];
 
-      // Clamp elevation to 0-90°, ensure numeric
       const elevation = Math.min(90, Math.max(0, Number(curr.elevation) || 0));
       const elevationRad = (elevation * Math.PI) / 180;
 
-      // Instantaneous power (W) with efficiency
-      const power = MAX_POWER * Math.sin(elevationRad) * PANEL_EFFICIENCY;
+      const power =
+        MAX_POWER * Math.sin(elevationRad) * PANEL_EFFICIENCY;
 
-      // Time difference in hours (timestamp in seconds)
-      const deltaTimeSec = curr.timestamp - prev.timestamp;
-      const deltaTimeHr = deltaTimeSec / 3600;
+      const prevTime = new Date(prev.recordedAt).getTime();
+      const currTime = new Date(curr.recordedAt).getTime();
 
-      totalEnergy += power * deltaTimeHr; // Wh
+      const deltaTimeHr = (currTime - prevTime) / (1000 * 60 * 60);
+
+      totalEnergy += power * deltaTimeHr;
     }
 
     setEnergy(totalEnergy.toFixed(2));
   }, [readings]);
 
   return (
-    <div
-      style={{
-        backgroundColor: "#121212",
-        padding: "20px",
-        borderRadius: "10px",
-        marginTop: "20px",
-        color: "white",
-      }}
-    >
+    <div>
       <h2>Estimated Solar Output Today</h2>
-      <h1 style={{ color: "#00E5FF", fontSize: "40px" }}>
+      <h1
+        style={{
+          color: "#00E5FF",
+          fontSize: "50px",
+          textShadow: "0 0 15px rgba(0,229,255,0.7)",
+        }}
+      >
         {energy} Wh
       </h1>
     </div>
