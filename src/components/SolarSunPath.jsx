@@ -29,23 +29,21 @@ function SolarSunPath() {
   const centerX = 150;
   const centerY = 150;
 
-  // ----- Convert azimuth to arc fraction -----
-  // Sunrise ~90°, Sunset ~270°
+  // ----- Calculate horizontal position (left → right) -----
+  // Map azimuth 90° (sunrise) → 270° (sunset) to 0 → 1
   let normalizedAzimuth = (azimuth - 90) / 180;
   normalizedAzimuth = Math.max(0, Math.min(1, normalizedAzimuth));
 
-  // ----- Convert fraction to angle along semicircle (π → 0) -----
-  const angle = Math.PI * (1 - normalizedAzimuth);
+  // Horizontal X along the arc
+  const x = centerX - radius + normalizedAzimuth * (2 * radius);
 
-  // ----- Use elevation to slightly adjust radius if needed (optional) -----
-  const sunRadius = radius * (0.8 + 0.2 * (elevation / 90)); // optional subtle effect
-
-  // ----- Calculate X/Y along the semi-circle -----
-  const x = centerX + sunRadius * Math.cos(angle - Math.PI / 2); // shift so left is sunrise
-  const y = centerY - sunRadius * Math.sin(angle);
+  // ----- Calculate vertical position -----
+  // Map elevation 0° → 90° to bottom → top
+  const y = centerY - (radius * (elevation / 90));
 
   return (
     <div className="sunpath-container" style={{ position: "relative", width: "300px", height: "180px" }}>
+      
       {/* Arc path */}
       <svg width="300" height="180" className="arc-svg">
         <path
