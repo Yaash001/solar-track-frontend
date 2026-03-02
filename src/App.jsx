@@ -39,6 +39,7 @@ function App() {
           <div className="card">
             <SolarSunPath />
           </div>
+          
         </div>
 
       </div>

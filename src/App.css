@@ -196,3 +196,38 @@ body.light .theme-btn {
     height: 50vh;
   }
 }
+
+.sunpath-container {
+  position: relative;
+  width: 300px;
+  height: 180px;
+  margin: auto;
+  background: linear-gradient(to top, #1e3c72, #2a5298);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.arc-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.sun {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(circle, #ffdd00, #ff9900);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.8s ease-in-out;
+  box-shadow: 0 0 25px rgba(255, 200, 0, 0.8);
+}
+
+.sun-info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  font-size: 13px;
+}

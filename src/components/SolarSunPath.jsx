@@ -1,100 +1,83 @@
-import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import socket from "../services/socket";
 
-function SolarSunPath({ radius = 100 }) {
-  const width = radius * 2 + 20; // semi-circle width + margin
-  const height = radius + 20; // semi-circle height + margin
-
-  const [readings, setReadings] = useState([]);
-
-  // Get latest reading safely
-  const latestReading = useMemo(() => {
-    if (!readings.length) return null;
-    return readings[readings.length - 1];
-  }, [readings]);
-
-  // Determine max elevation for scaling
-  const maxElevation = useMemo(() => {
-    if (!readings.length) return 60; // default max
-    return Math.max(...readings.map((r) => Number(r.elevation)), 60);
-  }, [readings]);
-
-  // Compute sun coordinates
-  const sunCoords = useMemo(() => {
-    if (!latestReading) return { x: radius + 10, y: radius };
-
-    const az = Number(latestReading.azimuth);
-    const elev = Number(latestReading.elevation);
-
-    if (!Number.isFinite(az) || !Number.isFinite(elev)) {
-      return { x: radius + 10, y: radius };
-    }
-
-    // Map azimuth (sunrise ≈ 90°, sunset ≈ 270°) to x
-    const minAz = 90;
-    const maxAz = 270;
-    const x = 10 + ((az - minAz) / (maxAz - minAz)) * (radius * 2);
-
-    // Map elevation 0 → maxElevation to y (top of arc = high elevation)
-    const y = radius - (elev / maxElevation) * radius;
-
-    return { x, y };
-  }, [latestReading, radius, maxElevation]);
+function SolarSunPath() {
+  const [solarData, setSolarData] = useState(null);
 
   useEffect(() => {
-    // Initial fetch
-    axios
-      .get("http://localhost:5000/api/solar-readings")
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setReadings(res.data.slice(-20)); // last 20 readings
-        }
+    axios.get("http://localhost:5000/api/solar-readings")
+      .then(res => {
+        const latest = res.data[res.data.length - 1];
+        setSolarData(latest);
       })
-      .catch(console.error);
+      .catch(err => console.error(err));
 
-    // Socket listener for new readings
     socket.on("new-solar-data", (newData) => {
-      setReadings((prev) => [...prev.slice(-19), newData]);
+      setSolarData(newData);
     });
 
     return () => socket.off("new-solar-data");
   }, []);
 
+  if (!solarData) return <div>Loading sun path...</div>;
+
+  const { azimuth, elevation } = solarData;
+
+  // ----- ARC SETTINGS -----
+  const radius = 130;
+  const centerX = 150;
+  const centerY = 150;
+
+  // ----- Convert azimuth to arc fraction -----
+  // Sunrise ~90°, Sunset ~270°
+  let normalizedAzimuth = (azimuth - 90) / 180;
+  normalizedAzimuth = Math.max(0, Math.min(1, normalizedAzimuth));
+
+  // ----- Convert fraction to angle along semicircle (π → 0) -----
+  const angle = Math.PI * (1 - normalizedAzimuth);
+
+  // ----- Use elevation to slightly adjust radius if needed (optional) -----
+  const sunRadius = radius * (0.8 + 0.2 * (elevation / 90)); // optional subtle effect
+
+  // ----- Calculate X/Y along the semi-circle -----
+  const x = centerX + sunRadius * Math.cos(angle - Math.PI / 2); // shift so left is sunrise
+  const y = centerY - sunRadius * Math.sin(angle);
+
   return (
-    <div style={{ textAlign: "center" }}>
-      <svg width={width} height={height}>
-        {/* Sun semi-circle path */}
+    <div className="sunpath-container" style={{ position: "relative", width: "300px", height: "180px" }}>
+      {/* Arc path */}
+      <svg width="300" height="180" className="arc-svg">
         <path
-          d={`M 10 ${radius} A ${radius} ${radius} 0 0 1 ${radius * 2 + 10} ${radius}`}
-          stroke="#00E5FF"
+          d="M 20 150 A 130 130 0 0 1 280 150"
+          stroke="rgba(255,255,255,0.4)"
           strokeWidth="2"
           fill="none"
-        />
-
-        {/* Animated sun */}
-        <motion.circle
-          r="12"
-          fill="#FFD700"
-          cx={sunCoords.x}
-          cy={sunCoords.y}
-          animate={{
-            cx: sunCoords.x,
-            cy: sunCoords.y,
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 60,
-            damping: 20,
-          }}
+          strokeDasharray="6 6"
         />
       </svg>
 
-      <p style={{ marginTop: "10px" }}>
-        Elevation: {latestReading ? Number(latestReading.elevation).toFixed(1) : 0}° | Azimuth:{" "}
-        {latestReading ? Number(latestReading.azimuth).toFixed(1) : 0}°
-      </p>
+      {/* Sun */}
+      <div
+        className="sun"
+        style={{
+          position: "absolute",
+          width: "20px",
+          height: "20px",
+          borderRadius: "50%",
+          background: "orange",
+          boxShadow: "0 0 20px rgba(255,165,0,0.8)",
+          left: `${x - 10}px`,
+          top: `${y - 10}px`,
+          transition: "all 0.5s ease"
+        }}
+      />
+
+      {/* Sun info */}
+      <div className="sun-info" style={{ marginTop: "10px", color: "white" }}>
+        <p>Azimuth: {azimuth.toFixed(2)}°</p>
+        <p>Elevation: {elevation.toFixed(2)}°</p>
+      </div>
     </div>
   );
 }
