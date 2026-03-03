@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import socket from "../services/socket";
+import { useEffect, useMemo } from "react";
+import { Scatter } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   LinearScale,
@@ -9,39 +8,23 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Scatter } from "react-chartjs-2";
 
-ChartJS.register(
-  LinearScale,
-  PointElement,
-  LineElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
-function SolarChart() {
-  const [readings, setReadings] = useState([]);
+function SolarChart({ readings, selectedDate }) {
+  // Date key YYYY-MM-DD
+  const getDateKey = (dateString) => {
+    const d = new Date(dateString);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/solar-readings")
-      .then((response) => {
-        // Only keep last 30 readings
-        setReadings(response.data.slice(-30));
-      });
+  // Filter readings for selected date
+  const filteredReadings = useMemo(() => {
+    return readings.filter((r) => getDateKey(r.recordedAt) === selectedDate);
+  }, [readings, selectedDate]);
 
-    socket.on("new-solar-data", (newData) => {
-      setReadings((prev) => {
-        const updated = [...prev, newData];
-        return updated.slice(-30);
-      });
-    });
-
-    return () => socket.off("new-solar-data");
-  }, []);
-
-  // Clamp readings to fixed ranges
-  const clampedReadings = readings.map((item) => ({
+  // Clamp readings
+  const clampedReadings = filteredReadings.map((item) => ({
     x: Math.min(Math.max(item.azimuth, 0), 270),
     y: Math.min(Math.max(item.elevation, 0), 90),
   }));
@@ -61,30 +44,20 @@ function SolarChart() {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        labels: { color: "#ffffff" },
-      },
+      legend: { labels: { color: "#ffffff" } },
     },
     scales: {
       x: {
         min: 0,
-        max: 280, // fixed azimuth range
-        title: {
-          display: true,
-          text: "Azimuth (°)",
-          color: "#00E5FF",
-        },
+        max: 280,
+        title: { display: true, text: "Azimuth (°)", color: "#00E5FF" },
         ticks: { color: "#ffffff" },
         grid: { color: "rgba(255,255,255,0.1)" },
       },
       y: {
         min: 0,
-        max: 120, // fixed elevation range
-        title: {
-          display: true,
-          text: "Elevation (°)",
-          color: "#00E5FF",
-        },
+        max: 120,
+        title: { display: true, text: "Elevation (°)", color: "#00E5FF" },
         ticks: { color: "#ffffff" },
         grid: { color: "rgba(255,255,255,0.1)" },
       },
@@ -92,7 +65,7 @@ function SolarChart() {
   };
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div style={{ height: "400px", width: "100%" }}>
       <Scatter data={data} options={options} />
     </div>
   );

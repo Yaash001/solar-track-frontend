@@ -1,14 +1,12 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import socket from "../services/socket";
 import { toast } from "react-toastify";
 
-function SolarTable() {
-  const [readings, setReadings] = useState([]);
-  const [selectedDate, setSelectedDate] = useState("");
+function SolarTable({ readings, setReadings, selectedDate, setSelectedDate }) {
   const [loading, setLoading] = useState(true);
 
-  // 🔑 Safe internal date key (YYYY-MM-DD)
+  // Date key: YYYY-MM-DD
   const getDateKey = (dateString) => {
     const d = new Date(dateString);
     return (
@@ -26,8 +24,7 @@ function SolarTable() {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      hour12: true,
-    timeZone: "UTC",
+      timeZone: "UTC",
     });
 
   const formatDisplayDate = (dateKey) =>
@@ -37,13 +34,11 @@ function SolarTable() {
       day: "numeric",
     });
 
-  // 📥 Initial Data Fetch
+  // Initial fetch & socket
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/solar-readings"
-        );
+        const response = await axios.get("http://localhost:5000/api/solar-readings");
 
         const sorted = response.data.sort(
           (a, b) => new Date(a.recordedAt) - new Date(b.recordedAt)
@@ -51,11 +46,8 @@ function SolarTable() {
 
         setReadings(sorted);
 
-        if (sorted.length > 0) {
-          const latestDate = getDateKey(
-            sorted[sorted.length - 1].recordedAt
-          );
-          setSelectedDate(latestDate);
+        if (sorted.length > 0 && !selectedDate) {
+          setSelectedDate(getDateKey(sorted[sorted.length - 1].recordedAt));
         }
       } catch (error) {
         toast.error("Failed to load solar data");
@@ -67,7 +59,7 @@ function SolarTable() {
 
     fetchData();
 
-    // 🔄 Real-time updates
+    // Real-time socket
     socket.on("new-solar-data", (newData) => {
       toast.success("New solar data received 🌞");
 
@@ -78,23 +70,19 @@ function SolarTable() {
       );
     });
 
-    return () => {
-      socket.off("new-solar-data");
-    };
+    return () => socket.off("new-solar-data");
   }, []);
 
-  // 📅 Unique Dates (Memoized)
+  // Unique dates
   const uniqueDates = useMemo(() => {
-    return [
-      ...new Set(readings.map((r) => getDateKey(r.recordedAt))),
-    ].sort((a, b) => new Date(b) - new Date(a));
+    return [...new Set(readings.map((r) => getDateKey(r.recordedAt)))].sort(
+      (a, b) => new Date(b) - new Date(a)
+    );
   }, [readings]);
 
-  // 🔍 Filtered Readings (Memoized)
+  // Filtered readings for table
   const filteredReadings = useMemo(() => {
-    return readings.filter(
-      (r) => getDateKey(r.recordedAt) === selectedDate
-    );
+    return readings.filter((r) => getDateKey(r.recordedAt) === selectedDate);
   }, [readings, selectedDate]);
 
   if (loading) return <p>Loading solar data...</p>;
@@ -103,10 +91,7 @@ function SolarTable() {
     <div>
       <label>
         Select Date:{" "}
-        <select
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        >
+        <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
           {uniqueDates.map((dateKey) => (
             <option key={dateKey} value={dateKey}>
               {formatDisplayDate(dateKey)}
@@ -115,12 +100,7 @@ function SolarTable() {
         </select>
       </label>
 
-      <table
-        border="1"
-        cellPadding="5"
-        cellSpacing="0"
-        style={{ marginTop: "10px" }}
-      >
+      <table border="1" cellPadding="5" cellSpacing="0" style={{ marginTop: "10px" }}>
         <thead>
           <tr>
             <th>Time</th>
