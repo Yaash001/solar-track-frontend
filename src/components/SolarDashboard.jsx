@@ -1,14 +1,15 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import socket from "../services/socket";
+import SolarTable from "./SolarTable";
+import SolarChart from "./SolarChart";
 import { toast } from "react-toastify";
 
-function SolarTable() {
+function SolarDashboard() {
   const [readings, setReadings] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // 🔑 Safe internal date key (YYYY-MM-DD)
   const getDateKey = (dateString) => {
     const d = new Date(dateString);
     return (
@@ -20,24 +21,6 @@ function SolarTable() {
     );
   };
 
-  const formatTime = (dateString) =>
-    new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-      hour12: true,
-    timeZone: "UTC",
-    });
-
-  const formatDisplayDate = (dateKey) =>
-    new Date(dateKey).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-
-  // 📥 Initial Data Fetch
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -52,14 +35,12 @@ function SolarTable() {
         setReadings(sorted);
 
         if (sorted.length > 0) {
-          const latestDate = getDateKey(
-            sorted[sorted.length - 1].recordedAt
+          setSelectedDate(
+            getDateKey(sorted[sorted.length - 1].recordedAt)
           );
-          setSelectedDate(latestDate);
         }
       } catch (error) {
         toast.error("Failed to load solar data");
-        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -67,10 +48,7 @@ function SolarTable() {
 
     fetchData();
 
-    // 🔄 Real-time updates
     socket.on("new-solar-data", (newData) => {
-      toast.success("New solar data received 🌞");
-
       setReadings((prev) =>
         [...prev, newData].sort(
           (a, b) => new Date(a.recordedAt) - new Date(b.recordedAt)
@@ -78,26 +56,22 @@ function SolarTable() {
       );
     });
 
-    return () => {
-      socket.off("new-solar-data");
-    };
+    return () => socket.off("new-solar-data");
   }, []);
 
-  // 📅 Unique Dates (Memoized)
   const uniqueDates = useMemo(() => {
     return [
       ...new Set(readings.map((r) => getDateKey(r.recordedAt))),
     ].sort((a, b) => new Date(b) - new Date(a));
   }, [readings]);
 
-  // 🔍 Filtered Readings (Memoized)
   const filteredReadings = useMemo(() => {
     return readings.filter(
       (r) => getDateKey(r.recordedAt) === selectedDate
     );
   }, [readings, selectedDate]);
 
-  if (loading) return <p>Loading solar data...</p>;
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div>
@@ -109,43 +83,18 @@ function SolarTable() {
         >
           {uniqueDates.map((dateKey) => (
             <option key={dateKey} value={dateKey}>
-              {formatDisplayDate(dateKey)}
+              {new Date(dateKey).toDateString()}
             </option>
           ))}
         </select>
       </label>
 
-      <table
-        border="1"
-        cellPadding="5"
-        cellSpacing="0"
-        style={{ marginTop: "10px" }}
-      >
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Azimuth (°)</th>
-            <th>Elevation (°)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredReadings.length === 0 ? (
-            <tr>
-              <td colSpan="3">No data for selected date</td>
-            </tr>
-          ) : (
-            filteredReadings.map((item) => (
-              <tr key={item._id}>
-                <td>{formatTime(item.recordedAt)}</td>
-                <td>{Number(item.azimuth).toFixed(2)}</td>
-                <td>{Number(item.elevation).toFixed(2)}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+      <SolarTable readings={filteredReadings} />
+      <div style={{ height: "400px", marginTop: "20px" }}>
+        <SolarChart readings={filteredReadings} />
+      </div>
     </div>
   );
 }
 
-export default SolarTable;
+export default SolarDashboard;

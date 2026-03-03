@@ -26,6 +26,7 @@ function SolarChart() {
     axios
       .get("http://localhost:5000/api/solar-readings")
       .then((response) => {
+        // Only keep last 30 readings
         setReadings(response.data.slice(-30));
       });
 
@@ -39,14 +40,17 @@ function SolarChart() {
     return () => socket.off("new-solar-data");
   }, []);
 
+  // Clamp readings to fixed ranges
+  const clampedReadings = readings.map((item) => ({
+    x: Math.min(Math.max(item.azimuth, 0), 270),
+    y: Math.min(Math.max(item.elevation, 0), 90),
+  }));
+
   const data = {
     datasets: [
       {
         label: "Solar Position",
-        data: readings.map((item) => ({
-          x: item.azimuth,
-          y: item.elevation,
-        })),
+        data: clampedReadings,
         backgroundColor: "rgba(0,229,255,0.8)",
         pointRadius: 5,
       },
@@ -63,6 +67,8 @@ function SolarChart() {
     },
     scales: {
       x: {
+        min: 0,
+        max: 280, // fixed azimuth range
         title: {
           display: true,
           text: "Azimuth (°)",
@@ -72,6 +78,8 @@ function SolarChart() {
         grid: { color: "rgba(255,255,255,0.1)" },
       },
       y: {
+        min: 0,
+        max: 120, // fixed elevation range
         title: {
           display: true,
           text: "Elevation (°)",
