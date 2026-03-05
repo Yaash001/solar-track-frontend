@@ -5,23 +5,12 @@ function LiveStatus() {
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
-    // 🔥 Force connection if not connected
-    if (!socket.connected) {
-      socket.connect();
-    }
+    if (!socket.connected) socket.connect();
 
-    // ✅ Immediately check current state
     setIsLive(socket.connected);
 
-    // ✅ When connection happens
-    const handleConnect = () => {
-      setIsLive(true);
-    };
-
-    // ✅ When disconnected
-    const handleDisconnect = () => {
-      setIsLive(false);
-    };
+    const handleConnect = () => setIsLive(true);
+    const handleDisconnect = () => setIsLive(false);
 
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
@@ -33,7 +22,24 @@ function LiveStatus() {
   }, []);
 
   return (
-    <div>
+    <div
+      style={{
+        display: "inline-block",
+        padding: "12px 24px",      // bigger padding
+        borderRadius: "30px",      // bigger radius
+        fontWeight: "900",          // bold
+        fontSize: "22px",           // larger font
+        color: "white",
+        backgroundColor: isLive ? "#28a745" : "#dc3545",
+        boxShadow: isLive
+          ? "0 0 15px rgba(40, 167, 69, 0.8)"
+          : "0 0 15px rgba(220, 53, 69, 0.8)",
+        transition: "all 0.3s ease",
+        fontFamily: "Segoe UI, sans-serif",
+        textAlign: "center",
+        minWidth: "100px",
+      }}
+    >
       {isLive ? "LIVE" : "OFFLINE"}
     </div>
   );

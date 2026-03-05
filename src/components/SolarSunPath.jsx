@@ -1,42 +1,48 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import socket from "../services/socket";
 import { AiFillHome } from "react-icons/ai";
 
 function SolarSunPath() {
-  const [solarData, setSolarData] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Update time every second for smooth animation
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/solar-readings")
-      .then((res) => {
-        const latest = res.data[res.data.length - 1];
-        setSolarData(latest);
-      })
-      .catch((err) => console.error(err));
-
-    socket.on("new-solar-data", (newData) => {
-      setSolarData(newData);
-    });
-
-    return () => socket.off("new-solar-data");
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  if (!solarData) return <div>Loading sun path...</div>;
-
-  const { azimuth, elevation } = solarData;
-
-  const radius = 130;
   const centerX = 150;
   const centerY = 150;
+  const radius = 100; // distance from house
 
-  // Horizontal X based on azimuth
-  let normalizedAzimuth = (azimuth - 90) / 180;
-  normalizedAzimuth = Math.max(0, Math.min(1, normalizedAzimuth));
-  const x = centerX - radius + normalizedAzimuth * (2 * radius);
+  // Compute fraction of the day between 8 AM and 4 PM
+  const hour = currentTime.getHours();
+  const minutes = currentTime.getMinutes();
+  const seconds = currentTime.getSeconds();
 
-  // Vertical Y based on elevation
-  const y = centerY - radius * (elevation / 90);
+  let fraction = 0; // default at left
+  if (hour >= 8 && hour <= 16) {
+    const totalSeconds = (hour - 8) * 3600 + minutes * 60 + seconds;
+    fraction = totalSeconds / (8 * 3600); // 0 → 1 over 8 hours
+  } else if (hour < 8) {
+    fraction = 0;
+  } else if (hour > 16) {
+    fraction = 1;
+  }
+
+  // Map fraction to angle 135° (left) → 90° (above) → 45° (right)
+  // We'll use a piecewise linear curve: 0–0.5 fraction: 135→90, 0.5–1: 90→45
+  let angleDeg = 90;
+  if (fraction <= 0.5) {
+    angleDeg = 135 - fraction * 2 * 45; // 0 → 0.5 fraction maps 135 → 90
+  } else {
+    angleDeg = 90 - (fraction - 0.5) * 2 * 45; // 0.5 →1 maps 90→45
+  }
+
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const sunX = centerX + radius * Math.cos(angleRad);
+  const sunY = centerY - radius * Math.sin(angleRad);
 
   return (
     <div
@@ -47,22 +53,7 @@ function SolarSunPath() {
         gap: "10px",
       }}
     >
-      {/* Outer Card for Sun Info */}
-      <div
-        style={{
-          width: "300px",
-          background: "#333",
-          color: "white",
-          padding: "10px",
-          borderRadius: "10px",
-          textAlign: "center",
-        }}
-      >
-        <div>Azimuth: {azimuth.toFixed(2)}°</div>
-        <div>Elevation: {elevation.toFixed(2)}°</div>
-      </div>
-
-      {/* Sun Path Area */}
+      {/* Sun Path */}
       <div
         style={{
           position: "relative",
@@ -72,7 +63,7 @@ function SolarSunPath() {
           borderRadius: "10px",
         }}
       >
-        {/* Home logo at center */}
+        {/* House at center */}
         <div
           style={{
             position: "absolute",
@@ -93,9 +84,9 @@ function SolarSunPath() {
             borderRadius: "50%",
             background: "orange",
             boxShadow: "0 0 20px rgba(255,165,0,0.8)",
-            left: `${x - 10}px`,
-            top: `${y - 10}px`,
-            transition: "all 0.5s ease",
+            left: `${sunX - 10}px`,
+            top: `${sunY - 10}px`,
+            transition: "all 1s linear",
             zIndex: 2,
           }}
         />

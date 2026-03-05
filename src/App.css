@@ -5,6 +5,37 @@ html, body, #root {
   padding: 0;
 }
 
+/* ======================
+   CLOCK & GREETING
+====================== */
+.clock-greeting {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.clock {
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.greeting {
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffdd57;
+  text-shadow: 0 0 8px rgba(255, 221, 87, 0.7);
+  transition: color 0.5s ease;
+}
+
+body.dark .greeting {
+  color: #ffdd57;
+}
+
+body.light .greeting {
+  color: #ff9900;
+}
+
 /* Smooth theme transition */
 body {
   transition: background 0.4s ease, color 0.4s ease;
