@@ -16,12 +16,12 @@ html, body, #root {
 }
 
 .clock {
-  font-size: 28px;
+  font-size: 45px;
   font-weight: 600;
 }
 
 .greeting {
-  font-size: 20px;
+  font-size: 25px;
   font-weight: 500;
   color: #ffdd57;
   text-shadow: 0 0 8px rgba(255, 221, 87, 0.7);

@@ -4,6 +4,7 @@ import SolarOutput from "./components/SolarOutput";
 import SolarSunPath from "./components/SolarSunPath";
 import SolarTable from "./components/SolarTable";
 import LiveStatus from "./components/LiveStatus";
+import ThemeToggle from "./components/ThemeToggle" 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
@@ -45,6 +46,8 @@ function App() {
         </div>
         <div className="header-right">
           <LiveStatus />
+<ThemeToggle />         
+
         </div>
       </div>
 
